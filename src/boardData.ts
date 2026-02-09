@@ -1,17 +1,19 @@
 import { Board } from "./types";
 
-const STORAGE_KEY = "kanban-board";
+function storageKey(userId: string): string {
+  return `kanban-board-${userId}`;
+}
 
-export function loadBoard(): Board {
-  const stored = localStorage.getItem(STORAGE_KEY);
+export function loadBoard(userId: string): Board {
+  const stored = localStorage.getItem(storageKey(userId));
   if (stored) {
     return JSON.parse(stored) as Board;
   }
   return getDefaultBoard();
 }
 
-export function saveBoard(board: Board): void {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(board));
+export function saveBoard(userId: string, board: Board): void {
+  localStorage.setItem(storageKey(userId), JSON.stringify(board));
 }
 
 function getDefaultBoard(): Board {

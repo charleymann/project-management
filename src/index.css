@@ -25,11 +25,56 @@ body {
   background: #1a1a2e;
   color: #fff;
   padding: 16px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
 
 .app-header h1 {
   font-size: 1.25rem;
   font-weight: 600;
+}
+
+/* User info in header */
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.user-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+}
+
+.user-name {
+  font-size: 0.85rem;
+  opacity: 0.9;
+}
+
+.sign-out-btn {
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  padding: 6px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.8rem;
+}
+
+.sign-out-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* Loading */
+.loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  font-size: 1rem;
+  color: #888;
 }
 
 /* Board */
@@ -270,4 +315,79 @@ body {
 
 .delete-btn:hover {
   background: #fff5f5 !important;
+}
+
+/* Login page */
+.login-page {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  background: #f0f2f5;
+}
+
+.login-card {
+  background: #fff;
+  border-radius: 12px;
+  padding: 40px;
+  text-align: center;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.1);
+  max-width: 440px;
+  width: 90vw;
+}
+
+.login-card h1 {
+  font-size: 1.5rem;
+  margin-bottom: 8px;
+  color: #1a1a2e;
+}
+
+.login-card > p {
+  color: #666;
+  font-size: 0.9rem;
+  margin-bottom: 28px;
+}
+
+.google-btn-container {
+  display: flex;
+  justify-content: center;
+}
+
+.login-dev-notice {
+  text-align: left;
+  background: #fffbe6;
+  border: 1px solid #ffe58f;
+  border-radius: 8px;
+  padding: 16px;
+  font-size: 0.85rem;
+  line-height: 1.5;
+}
+
+.login-dev-notice p {
+  margin-bottom: 8px;
+}
+
+.login-dev-notice pre {
+  background: #f5f5f5;
+  padding: 8px 10px;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  overflow-x: auto;
+  margin-bottom: 8px;
+}
+
+.login-dev-notice code {
+  background: #f0f0f0;
+  padding: 1px 5px;
+  border-radius: 3px;
+  font-size: 0.82rem;
+}
+
+.login-dev-hint {
+  color: #888;
+  font-size: 0.8rem;
+}
+
+.login-dev-hint a {
+  color: #5c6bc0;
 }

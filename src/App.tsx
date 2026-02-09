@@ -13,19 +13,45 @@ import {
 import { arrayMove } from "@dnd-kit/sortable";
 import { Board, Card } from "./types";
 import { loadBoard, saveBoard } from "./boardData";
+import { useAuth } from "./AuthContext";
 import KanbanColumn from "./components/KanbanColumn";
 import KanbanCard from "./components/KanbanCard";
 import CardModal from "./components/CardModal";
+import LoginPage from "./components/LoginPage";
 
 function App() {
-  const [board, setBoard] = useState<Board>(loadBoard);
+  const { user, isLoading, signOut } = useAuth();
+
+  if (isLoading) {
+    return (
+      <div className="app">
+        <div className="loading">Loading...</div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <LoginPage />;
+  }
+
+  return <KanbanApp user={user} onSignOut={signOut} />;
+}
+
+function KanbanApp({
+  user,
+  onSignOut,
+}: {
+  user: { sub: string; name: string; email: string; picture: string };
+  onSignOut: () => void;
+}) {
+  const [board, setBoard] = useState<Board>(() => loadBoard(user.sub));
   const [activeCard, setActiveCard] = useState<Card | null>(null);
   const [editingCard, setEditingCard] = useState<Card | null>(null);
   const [addingToColumn, setAddingToColumn] = useState<string | null>(null);
 
   useEffect(() => {
-    saveBoard(board);
-  }, [board]);
+    saveBoard(user.sub, board);
+  }, [board, user.sub]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } })
@@ -51,7 +77,6 @@ function App() {
     const overId = over.id as string;
 
     const sourceCol = findColumnByCardId(activeId);
-    // over might be a column id or a card id
     const overCol =
       board.columns.find((c) => c.id === overId) || findColumnByCardId(overId);
 
@@ -97,7 +122,6 @@ function App() {
     const column = findColumnByCardId(activeId);
     if (!column) return;
 
-    // Reorder within the same column
     if (column.cardIds.includes(overId)) {
       setBoard((prev) => {
         const newColumns = prev.columns.map((col) => {
@@ -171,6 +195,20 @@ function App() {
     <div className="app">
       <header className="app-header">
         <h1>Kanban Board</h1>
+        <div className="user-info">
+          {user.picture && (
+            <img
+              src={user.picture}
+              alt=""
+              className="user-avatar"
+              referrerPolicy="no-referrer"
+            />
+          )}
+          <span className="user-name">{user.name}</span>
+          <button className="sign-out-btn" onClick={onSignOut}>
+            Sign out
+          </button>
+        </div>
       </header>
       <DndContext
         sensors={sensors}
