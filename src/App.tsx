@@ -14,11 +14,43 @@ import { arrayMove } from "@dnd-kit/sortable";
 import { Board, Card } from "./types";
 import { loadBoard, saveBoard } from "./boardData";
 import { fetchStoryIdeas } from "./storyFetcher";
+import { useAuth } from "./auth";
 import KanbanColumn from "./components/KanbanColumn";
 import KanbanCard from "./components/KanbanCard";
 import CardModal from "./components/CardModal";
+import LoginPage from "./components/LoginPage";
+import HomePage from "./components/HomePage";
+
+type Page = "login" | "home" | "board";
 
 function App() {
+  const { user, logout } = useAuth();
+  const [page, setPage] = useState<Page>(user ? "home" : "login");
+
+  // If user logs out, go back to login
+  useEffect(() => {
+    if (!user) setPage("login");
+  }, [user]);
+
+  if (page === "login" || !user) {
+    return <LoginPage onSuccess={() => setPage("home")} />;
+  }
+
+  if (page === "home") {
+    return <HomePage onGoToBoard={() => setPage("board")} />;
+  }
+
+  return <StoryBoard onGoHome={() => setPage("home")} onLogout={logout} />;
+}
+
+function StoryBoard({
+  onGoHome,
+  onLogout,
+}: {
+  onGoHome: () => void;
+  onLogout: () => void;
+}) {
+  const { user } = useAuth();
   const [board, setBoard] = useState<Board>(loadBoard);
   const [activeCard, setActiveCard] = useState<Card | null>(null);
   const [editingCard, setEditingCard] = useState<Card | null>(null);
@@ -201,6 +233,13 @@ function App() {
         <div className="brand">
           <h1>Red Kraken Creative</h1>
           <span className="brand-sub">Story Prompts for Law Firms</span>
+        </div>
+        <div className="user-info">
+          <button className="nav-btn" onClick={onGoHome}>Home</button>
+          <span className="user-name">{user?.displayName}</span>
+          <button className="sign-out-btn" onClick={onLogout}>
+            Sign out
+          </button>
         </div>
       </header>
       <DndContext
