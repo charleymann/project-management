@@ -11,11 +11,10 @@ export default function LoginPage({ onSuccess }: Props) {
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [showForgot, setShowForgot] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
 
-  // If login just succeeded (user appeared), redirect
   if (user) {
-    // Small delay to let state settle
     setTimeout(onSuccess, 50);
   }
 
@@ -29,17 +28,11 @@ export default function LoginPage({ onSuccess }: Props) {
     }
 
     setIsLoading(true);
-    const err = login(username, password);
+    const err = await login(username, password);
     if (err) {
       setError(err);
-      setIsLoading(false);
-      return;
     }
-
-    // Give the async hash check time to complete
-    setTimeout(() => {
-      setIsLoading(false);
-    }, 500);
+    setIsLoading(false);
   };
 
   return (
@@ -74,6 +67,17 @@ export default function LoginPage({ onSuccess }: Props) {
             {isLoading ? "Signing in..." : "Sign in"}
           </button>
         </form>
+        <button
+          className="forgot-link"
+          onClick={() => setShowForgot(!showForgot)}
+        >
+          Forgot your password?
+        </button>
+        {showForgot && (
+          <p className="forgot-msg">
+            Contact your administrator to have your password reset.
+          </p>
+        )}
       </div>
     </div>
   );

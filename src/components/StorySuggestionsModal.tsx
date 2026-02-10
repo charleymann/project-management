@@ -31,7 +31,7 @@ export default function StorySuggestionsModal({ suggestions, onConfirm, onClose 
       <div className="modal suggestions-modal" onClick={(e) => e.stopPropagation()}>
         <h3>Story Suggestions</h3>
         <p className="suggestions-desc">
-          We found {suggestions.length} prompt{suggestions.length !== 1 ? "s" : ""}. Select the ones you want to add to your Story Feed.
+          We found {suggestions.length} article{suggestions.length !== 1 ? "s" : ""}. Select the ones you want to add to your Story Feed.
         </p>
 
         <div className="suggestions-list">
@@ -48,13 +48,26 @@ export default function StorySuggestionsModal({ suggestions, onConfirm, onClose 
                 <div className="suggestion-title">{card.title}</div>
                 {card.description && (
                   <p className="suggestion-desc-text">
-                    {card.description.length > 160
-                      ? card.description.slice(0, 160) + "..."
+                    {card.description.length > 200
+                      ? card.description.slice(0, 200) + "..."
                       : card.description}
                   </p>
                 )}
                 {card.sourceName && (
-                  <span className="suggestion-source">{card.sourceName}</span>
+                  <span className="suggestion-source">
+                    {card.sourceUrl ? (
+                      <a
+                        href={card.sourceUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        {card.sourceName}
+                      </a>
+                    ) : (
+                      card.sourceName
+                    )}
+                  </span>
                 )}
               </div>
             </div>
