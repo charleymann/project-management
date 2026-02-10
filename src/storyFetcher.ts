@@ -1,4 +1,5 @@
 import { Card } from "./types";
+import { authFetch } from "./auth";
 
 export interface SearchCriteria {
   topic: string;
@@ -6,16 +7,18 @@ export interface SearchCriteria {
   notes: string;
 }
 
-interface AiPrompt {
+interface ResearchedStory {
   title: string;
-  description: string;
+  url: string;
+  source: string;
+  summary: string;
 }
 
 export async function fetchStoryIdeas(
   existingCards: Record<string, Card>,
   criteria: SearchCriteria
 ): Promise<Card[]> {
-  const res = await fetch("/api/generate-prompts", {
+  const res = await authFetch("/api/research-stories", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(criteria),
@@ -28,21 +31,21 @@ export async function fetchStoryIdeas(
     );
   }
 
-  const { prompts }: { prompts: AiPrompt[] } = await res.json();
+  const { stories }: { stories: ResearchedStory[] } = await res.json();
 
-  // Deduplicate against existing board cards
   const existingTitles = new Set(
     Object.values(existingCards).map((c) => c.title.toLowerCase())
   );
 
-  return prompts
-    .filter((p) => p.title && !existingTitles.has(p.title.toLowerCase()))
-    .map((p) => ({
-      id: `ai-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
-      title: p.title,
-      description: p.description,
+  return stories
+    .filter((s) => s.title && !existingTitles.has(s.title.toLowerCase()))
+    .map((s) => ({
+      id: `news-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+      title: s.title,
+      description: s.summary,
       priority: "medium" as const,
-      sourceName: "AI Generated",
+      sourceUrl: s.url,
+      sourceName: s.source || "News",
       createdAt: Date.now(),
     }));
 }

@@ -20,19 +20,28 @@ import KanbanCard from "./components/KanbanCard";
 import CardModal from "./components/CardModal";
 import LoginPage from "./components/LoginPage";
 import HomePage from "./components/HomePage";
+import AdminPanel from "./components/AdminPanel";
 import FetchFormModal, { FetchCriteria } from "./components/FetchFormModal";
 import StorySuggestionsModal from "./components/StorySuggestionsModal";
 
-type Page = "login" | "home" | "board";
+type Page = "login" | "home" | "board" | "admin";
 
 function App() {
-  const { user, logout } = useAuth();
+  const { user, loading, logout } = useAuth();
   const [page, setPage] = useState<Page>(user ? "home" : "login");
 
-  // If user logs out, go back to login
   useEffect(() => {
-    if (!user) setPage("login");
-  }, [user]);
+    if (!loading && !user) setPage("login");
+    if (!loading && user && page === "login") setPage("home");
+  }, [user, loading]);
+
+  if (loading) {
+    return (
+      <div className="login-page">
+        <p style={{ color: "#a88a90" }}>Loading...</p>
+      </div>
+    );
+  }
 
   if (page === "login" || !user) {
     return <LoginPage onSuccess={() => setPage("home")} />;
@@ -42,23 +51,50 @@ function App() {
     return <HomePage onGoToBoard={() => setPage("board")} />;
   }
 
-  return <StoryBoard onGoHome={() => setPage("home")} onLogout={logout} />;
+  if (page === "admin") {
+    return (
+      <div className="app">
+        <header className="app-header">
+          <div className="brand">
+            <h1>Red Kraken Creative</h1>
+            <span className="brand-sub">Story Prompts for Law Firms</span>
+          </div>
+          <div className="user-info">
+            <button className="nav-btn" onClick={() => setPage("home")}>Home</button>
+            <button className="nav-btn" onClick={() => setPage("board")}>Board</button>
+            <span className="user-name">{user.displayName}</span>
+            <button className="sign-out-btn" onClick={logout}>Sign out</button>
+          </div>
+        </header>
+        <AdminPanel onBack={() => setPage("board")} />
+      </div>
+    );
+  }
+
+  return (
+    <StoryBoard
+      onGoHome={() => setPage("home")}
+      onGoAdmin={() => setPage("admin")}
+      onLogout={logout}
+    />
+  );
 }
 
 function StoryBoard({
   onGoHome,
+  onGoAdmin,
   onLogout,
 }: {
   onGoHome: () => void;
+  onGoAdmin: () => void;
   onLogout: () => void;
 }) {
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
   const [board, setBoard] = useState<Board>(loadBoard);
   const [activeCard, setActiveCard] = useState<Card | null>(null);
   const [editingCard, setEditingCard] = useState<Card | null>(null);
   const [addingToColumn, setAddingToColumn] = useState<string | null>(null);
 
-  // Fetch flow state
   const [showFetchForm, setShowFetchForm] = useState(false);
   const [isFetching, setIsFetching] = useState(false);
   const [fetchError, setFetchError] = useState<string | null>(null);
@@ -260,6 +296,9 @@ function StoryBoard({
         </div>
         <div className="user-info">
           <button className="nav-btn" onClick={onGoHome}>Home</button>
+          {isAdmin && (
+            <button className="nav-btn" onClick={onGoAdmin}>Manage Users</button>
+          )}
           <span className="user-name">{user?.displayName}</span>
           <button className="sign-out-btn" onClick={onLogout}>
             Sign out
