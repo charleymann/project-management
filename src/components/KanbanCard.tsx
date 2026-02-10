@@ -62,6 +62,23 @@ export default function KanbanCard({ card, isOverlay, onEdit }: Props) {
       {card.description && (
         <p className="card-description">{card.description}</p>
       )}
+      {card.sourceName && (
+        <span className="card-source">
+          {card.sourceUrl ? (
+            <a
+              href={card.sourceUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              onPointerDown={(e) => e.stopPropagation()}
+              onClick={(e) => e.stopPropagation()}
+            >
+              {card.sourceName}
+            </a>
+          ) : (
+            card.sourceName
+          )}
+        </span>
+      )}
     </div>
   );
 }

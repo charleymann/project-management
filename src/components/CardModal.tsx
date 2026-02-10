@@ -3,7 +3,7 @@ import { Card } from "../types";
 
 interface Props {
   card?: Card;
-  onSave: (title: string, description: string, priority: Card["priority"]) => void;
+  onSave: (card: Card) => void;
   onDelete?: () => void;
   onClose: () => void;
 }
@@ -14,11 +14,21 @@ export default function CardModal({ card, onSave, onDelete, onClose }: Props) {
   const [priority, setPriority] = useState<Card["priority"]>(
     card?.priority ?? "medium"
   );
+  const [sourceUrl, setSourceUrl] = useState(card?.sourceUrl ?? "");
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim()) return;
-    onSave(title.trim(), description.trim(), priority);
+
+    onSave({
+      id: card?.id ?? `card-${Date.now()}`,
+      title: title.trim(),
+      description: description.trim(),
+      priority,
+      sourceUrl: sourceUrl.trim() || undefined,
+      sourceName: card?.sourceName,
+      createdAt: card?.createdAt ?? Date.now(),
+    });
   };
 
   return (
@@ -28,25 +38,37 @@ export default function CardModal({ card, onSave, onDelete, onClose }: Props) {
         onClick={(e) => e.stopPropagation()}
         onSubmit={handleSubmit}
       >
-        <h3>{card ? "Edit Card" : "New Card"}</h3>
+        <h3>{card ? "Edit Prompt" : "New Prompt"}</h3>
 
         <label>
-          Title
+          Headline
           <input
             type="text"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             autoFocus
             required
+            placeholder="Story headline or topic"
           />
         </label>
 
         <label>
-          Description
+          Prompt / Notes
           <textarea
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            rows={3}
+            rows={4}
+            placeholder="Story angle, writing notes, or prompt details..."
+          />
+        </label>
+
+        <label>
+          Source URL
+          <input
+            type="url"
+            value={sourceUrl}
+            onChange={(e) => setSourceUrl(e.target.value)}
+            placeholder="https://..."
           />
         </label>
 

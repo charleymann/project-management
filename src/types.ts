@@ -3,6 +3,8 @@ export interface Card {
   title: string;
   description: string;
   priority: "low" | "medium" | "high";
+  sourceUrl?: string;
+  sourceName?: string;
   createdAt: number;
 }
 

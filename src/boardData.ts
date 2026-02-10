@@ -1,7 +1,7 @@
 import { Board } from "./types";
 
 function storageKey(userId: string): string {
-  return `kanban-board-${userId}`;
+  return `rk-storyboard-${userId}`;
 }
 
 export function loadBoard(userId: string): Board {
@@ -19,29 +19,35 @@ export function saveBoard(userId: string, board: Board): void {
 function getDefaultBoard(): Board {
   return {
     columns: [
-      { id: "todo", title: "To Do", cardIds: ["card-1", "card-2"] },
-      { id: "in-progress", title: "In Progress", cardIds: ["card-3"] },
-      { id: "done", title: "Done", cardIds: [] },
+      { id: "story-feed", title: "Story Feed", cardIds: ["card-1", "card-2"] },
+      { id: "shortlisted", title: "Shortlisted", cardIds: ["card-3"] },
+      { id: "writing", title: "Writing", cardIds: [] },
+      { id: "published", title: "Published", cardIds: [] },
     ],
     cards: {
       "card-1": {
         id: "card-1",
-        title: "Set up project structure",
-        description: "Initialize the repository and add build tooling.",
+        title: "Landmark ruling reshapes corporate liability standards",
+        description:
+          'Inspired by: "A recent appeals court decision broadens the scope of director liability in negligence claims."\n\nStory angle for law firm content:',
         priority: "high",
+        sourceName: "abajournal.com",
         createdAt: Date.now(),
       },
       "card-2": {
         id: "card-2",
-        title: "Design database schema",
-        description: "Define tables for users, projects, and tasks.",
+        title: "Small businesses face new compliance hurdles in 2026",
+        description:
+          'Inspired by: "Updated federal regulations require small businesses to overhaul their data handling practices by Q3."\n\nStory angle for law firm content:',
         priority: "medium",
+        sourceName: "law.com",
         createdAt: Date.now(),
       },
       "card-3": {
         id: "card-3",
-        title: "Create landing page",
-        description: "Build the initial landing page with hero section.",
+        title: "How family law firms are adopting mediation-first strategies",
+        description:
+          "A growing number of family law practices are leading with mediation to reduce court backlogs and improve client outcomes. Great angle for a client-facing blog post.",
         priority: "low",
         createdAt: Date.now(),
       },

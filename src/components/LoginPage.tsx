@@ -3,7 +3,6 @@ import { GOOGLE_CLIENT_ID } from "../AuthContext";
 
 export default function LoginPage() {
   useEffect(() => {
-    // Re-render the Google button once this component mounts
     const btnEl = document.getElementById("google-signin-btn");
     if (btnEl && window.google && GOOGLE_CLIENT_ID) {
       window.google.accounts.id.renderButton(btnEl, {
@@ -18,8 +17,8 @@ export default function LoginPage() {
   return (
     <div className="login-page">
       <div className="login-card">
-        <h1>Kanban Board</h1>
-        <p>Sign in to manage your projects</p>
+        <h1>Red Kraken Creative</h1>
+        <p>Sign in to access story prompts for law firm writing</p>
         {GOOGLE_CLIENT_ID ? (
           <div id="google-signin-btn" className="google-btn-container" />
         ) : (

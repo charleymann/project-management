@@ -14,6 +14,7 @@ import { arrayMove } from "@dnd-kit/sortable";
 import { Board, Card } from "./types";
 import { loadBoard, saveBoard } from "./boardData";
 import { useAuth } from "./AuthContext";
+import { fetchStoryIdeas } from "./storyFetcher";
 import KanbanColumn from "./components/KanbanColumn";
 import KanbanCard from "./components/KanbanCard";
 import CardModal from "./components/CardModal";
@@ -34,10 +35,10 @@ function App() {
     return <LoginPage />;
   }
 
-  return <KanbanApp user={user} onSignOut={signOut} />;
+  return <StoryBoard user={user} onSignOut={signOut} />;
 }
 
-function KanbanApp({
+function StoryBoard({
   user,
   onSignOut,
 }: {
@@ -48,6 +49,8 @@ function KanbanApp({
   const [activeCard, setActiveCard] = useState<Card | null>(null);
   const [editingCard, setEditingCard] = useState<Card | null>(null);
   const [addingToColumn, setAddingToColumn] = useState<string | null>(null);
+  const [isFetching, setIsFetching] = useState(false);
+  const [fetchError, setFetchError] = useState<string | null>(null);
 
   useEffect(() => {
     saveBoard(user.sub, board);
@@ -63,6 +66,41 @@ function KanbanApp({
     },
     [board.columns]
   );
+
+  const handleFetchStories = async () => {
+    setIsFetching(true);
+    setFetchError(null);
+    try {
+      const newCards = await fetchStoryIdeas(board.cards);
+      if (newCards.length === 0) {
+        setFetchError("No new stories found. Try again later.");
+        return;
+      }
+      setBoard((prev) => {
+        const newCardsMap: Record<string, Card> = {};
+        const newIds: string[] = [];
+        for (const card of newCards) {
+          newCardsMap[card.id] = card;
+          newIds.push(card.id);
+        }
+        return {
+          ...prev,
+          cards: { ...prev.cards, ...newCardsMap },
+          columns: prev.columns.map((col) =>
+            col.id === "story-feed"
+              ? { ...col, cardIds: [...newIds, ...col.cardIds] }
+              : col
+          ),
+        };
+      });
+    } catch (err) {
+      setFetchError(
+        err instanceof Error ? err.message : "Failed to fetch stories."
+      );
+    } finally {
+      setIsFetching(false);
+    }
+  };
 
   const handleDragStart = (event: DragStartEvent) => {
     const card = board.cards[event.active.id as string];
@@ -161,18 +199,10 @@ function KanbanApp({
     setAddingToColumn(null);
   };
 
-  const handleUpdateCard = (
-    cardId: string,
-    title: string,
-    description: string,
-    priority: Card["priority"]
-  ) => {
+  const handleUpdateCard = (updated: Card) => {
     setBoard((prev) => ({
       ...prev,
-      cards: {
-        ...prev.cards,
-        [cardId]: { ...prev.cards[cardId], title, description, priority },
-      },
+      cards: { ...prev.cards, [updated.id]: updated },
     }));
     setEditingCard(null);
   };
@@ -194,7 +224,10 @@ function KanbanApp({
   return (
     <div className="app">
       <header className="app-header">
-        <h1>Kanban Board</h1>
+        <div className="brand">
+          <h1>Red Kraken Creative</h1>
+          <span className="brand-sub">Story Prompts for Law Firms</span>
+        </div>
         <div className="user-info">
           {user.picture && (
             <img
@@ -225,6 +258,11 @@ function KanbanApp({
               cards={column.cardIds.map((id) => board.cards[id]).filter(Boolean)}
               onAddCard={() => setAddingToColumn(column.id)}
               onEditCard={setEditingCard}
+              onFetchStories={
+                column.id === "story-feed" ? handleFetchStories : undefined
+              }
+              isFetching={column.id === "story-feed" ? isFetching : false}
+              fetchError={column.id === "story-feed" ? fetchError : null}
             />
           ))}
         </div>
@@ -237,8 +275,8 @@ function KanbanApp({
 
       {addingToColumn && (
         <CardModal
-          onSave={(title, description, priority) =>
-            handleAddCard(addingToColumn, title, description, priority)
+          onSave={(card) =>
+            handleAddCard(addingToColumn, card.title, card.description, card.priority)
           }
           onClose={() => setAddingToColumn(null)}
         />
@@ -247,9 +285,7 @@ function KanbanApp({
       {editingCard && (
         <CardModal
           card={editingCard}
-          onSave={(title, description, priority) =>
-            handleUpdateCard(editingCard.id, title, description, priority)
-          }
+          onSave={handleUpdateCard}
           onDelete={() => handleDeleteCard(editingCard.id)}
           onClose={() => setEditingCard(null)}
         />

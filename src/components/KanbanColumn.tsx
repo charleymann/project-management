@@ -11,6 +11,9 @@ interface Props {
   cards: Card[];
   onAddCard: () => void;
   onEditCard: (card: Card) => void;
+  onFetchStories?: () => void;
+  isFetching?: boolean;
+  fetchError?: string | null;
 }
 
 export default function KanbanColumn({
@@ -18,6 +21,9 @@ export default function KanbanColumn({
   cards,
   onAddCard,
   onEditCard,
+  onFetchStories,
+  isFetching,
+  fetchError,
 }: Props) {
   const { setNodeRef } = useDroppable({ id: column.id });
 
@@ -27,6 +33,18 @@ export default function KanbanColumn({
         <h2>{column.title}</h2>
         <span className="column-count">{cards.length}</span>
       </div>
+      {onFetchStories && (
+        <div className="fetch-bar">
+          <button
+            className="fetch-btn"
+            onClick={onFetchStories}
+            disabled={isFetching}
+          >
+            {isFetching ? "Fetching..." : "Fetch story ideas"}
+          </button>
+          {fetchError && <p className="fetch-error">{fetchError}</p>}
+        </div>
+      )}
       <SortableContext
         items={column.cardIds}
         strategy={verticalListSortingStrategy}
@@ -42,7 +60,7 @@ export default function KanbanColumn({
         </div>
       </SortableContext>
       <button className="add-card-btn" onClick={onAddCard}>
-        + Add card
+        + Add prompt
       </button>
     </div>
   );
