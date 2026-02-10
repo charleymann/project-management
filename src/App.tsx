@@ -13,39 +13,13 @@ import {
 import { arrayMove } from "@dnd-kit/sortable";
 import { Board, Card } from "./types";
 import { loadBoard, saveBoard } from "./boardData";
-import { useAuth } from "./AuthContext";
 import { fetchStoryIdeas } from "./storyFetcher";
 import KanbanColumn from "./components/KanbanColumn";
 import KanbanCard from "./components/KanbanCard";
 import CardModal from "./components/CardModal";
-import LoginPage from "./components/LoginPage";
 
 function App() {
-  const { user, isLoading, signOut } = useAuth();
-
-  if (isLoading) {
-    return (
-      <div className="app">
-        <div className="loading">Loading...</div>
-      </div>
-    );
-  }
-
-  if (!user) {
-    return <LoginPage />;
-  }
-
-  return <StoryBoard user={user} onSignOut={signOut} />;
-}
-
-function StoryBoard({
-  user,
-  onSignOut,
-}: {
-  user: { sub: string; name: string; email: string; picture: string };
-  onSignOut: () => void;
-}) {
-  const [board, setBoard] = useState<Board>(() => loadBoard(user.sub));
+  const [board, setBoard] = useState<Board>(loadBoard);
   const [activeCard, setActiveCard] = useState<Card | null>(null);
   const [editingCard, setEditingCard] = useState<Card | null>(null);
   const [addingToColumn, setAddingToColumn] = useState<string | null>(null);
@@ -53,8 +27,8 @@ function StoryBoard({
   const [fetchError, setFetchError] = useState<string | null>(null);
 
   useEffect(() => {
-    saveBoard(user.sub, board);
-  }, [board, user.sub]);
+    saveBoard(board);
+  }, [board]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } })
@@ -227,20 +201,6 @@ function StoryBoard({
         <div className="brand">
           <h1>Red Kraken Creative</h1>
           <span className="brand-sub">Story Prompts for Law Firms</span>
-        </div>
-        <div className="user-info">
-          {user.picture && (
-            <img
-              src={user.picture}
-              alt=""
-              className="user-avatar"
-              referrerPolicy="no-referrer"
-            />
-          )}
-          <span className="user-name">{user.name}</span>
-          <button className="sign-out-btn" onClick={onSignOut}>
-            Sign out
-          </button>
         </div>
       </header>
       <DndContext

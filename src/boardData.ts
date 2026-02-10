@@ -1,19 +1,17 @@
 import { Board } from "./types";
 
-function storageKey(userId: string): string {
-  return `rk-storyboard-${userId}`;
-}
+const STORAGE_KEY = "rk-storyboard";
 
-export function loadBoard(userId: string): Board {
-  const stored = localStorage.getItem(storageKey(userId));
+export function loadBoard(): Board {
+  const stored = localStorage.getItem(STORAGE_KEY);
   if (stored) {
     return JSON.parse(stored) as Board;
   }
   return getDefaultBoard();
 }
 
-export function saveBoard(userId: string, board: Board): void {
-  localStorage.setItem(storageKey(userId), JSON.stringify(board));
+export function saveBoard(board: Board): void {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(board));
 }
 
 function getDefaultBoard(): Board {

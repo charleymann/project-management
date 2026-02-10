@@ -18,10 +18,3 @@ export interface Board {
   columns: Column[];
   cards: Record<string, Card>;
 }
-
-export interface User {
-  sub: string;
-  email: string;
-  name: string;
-  picture: string;
-}
