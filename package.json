@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build && cp dist/index.html dist/404.html",
+    "start": "serve dist -s -l tcp://0.0.0.0:$PORT",
     "preview": "vite preview"
   },
   "dependencies": {
@@ -13,7 +14,8 @@
     "@dnd-kit/sortable": "^8.0.0",
     "@dnd-kit/utilities": "^3.2.2",
     "react": "^18.3.1",
-    "react-dom": "^18.3.1"
+    "react-dom": "^18.3.1",
+    "serve": "^14.2.5"
   },
   "devDependencies": {
     "@types/react": "^18.3.12",
