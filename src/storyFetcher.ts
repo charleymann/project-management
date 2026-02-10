@@ -12,6 +12,12 @@ interface Rss2JsonResponse {
   items: RssItem[];
 }
 
+export interface SearchCriteria {
+  topic: string;
+  practiceArea: string;
+  notes: string;
+}
+
 const LEGAL_RSS_FEEDS = [
   "https://feeds.abajournal.com/abajournal/topstories",
   "https://www.law.com/radar.rss",
@@ -28,37 +34,126 @@ function truncate(text: string, max: number): string {
   return text.slice(0, max).trimEnd() + "...";
 }
 
+function buildKeywords(criteria: SearchCriteria): string[] {
+  const words: string[] = [];
+
+  if (criteria.topic) {
+    words.push(...criteria.topic.toLowerCase().split(/\s+/).filter(Boolean));
+  }
+
+  if (criteria.practiceArea && criteria.practiceArea !== "Any") {
+    words.push(
+      ...criteria.practiceArea
+        .toLowerCase()
+        .replace(/[/&]/g, " ")
+        .split(/\s+/)
+        .filter((w) => w.length > 2)
+    );
+  }
+
+  if (criteria.notes) {
+    words.push(
+      ...criteria.notes
+        .toLowerCase()
+        .split(/\s+/)
+        .filter((w) => w.length > 3)
+    );
+  }
+
+  return [...new Set(words)];
+}
+
+function scoreItem(item: RssItem, keywords: string[]): number {
+  if (keywords.length === 0) return 1;
+
+  const text = `${item.title} ${stripHtml(item.description)}`.toLowerCase();
+  let score = 0;
+  for (const kw of keywords) {
+    if (text.includes(kw)) score++;
+  }
+  return score;
+}
+
+function buildPrompt(
+  rawDesc: string,
+  criteria: SearchCriteria
+): string {
+  let prompt = "";
+
+  if (rawDesc) {
+    prompt += `Inspired by: "${truncate(rawDesc, 200)}"\n\n`;
+  }
+
+  if (criteria.practiceArea && criteria.practiceArea !== "Any") {
+    prompt += `Practice area: ${criteria.practiceArea}\n`;
+  }
+  if (criteria.topic) {
+    prompt += `Focus: ${criteria.topic}\n`;
+  }
+  if (criteria.notes) {
+    prompt += `Guidance: ${criteria.notes}\n`;
+  }
+
+  prompt += "\nStory angle for law firm content:";
+  return prompt;
+}
+
 export async function fetchStoryIdeas(
-  existingCards: Record<string, Card>
+  existingCards: Record<string, Card>,
+  criteria: SearchCriteria
 ): Promise<Card[]> {
   const existingTitles = new Set(
     Object.values(existingCards).map((c) => c.title.toLowerCase())
   );
 
-  const feed = LEGAL_RSS_FEEDS[Math.floor(Math.random() * LEGAL_RSS_FEEDS.length)];
+  const keywords = buildKeywords(criteria);
 
-  const url = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(feed)}`;
+  // Fetch from all feeds in parallel and combine results
+  const allItems: RssItem[] = [];
 
-  const res = await fetch(url);
-  if (!res.ok) {
-    throw new Error(`Failed to fetch stories (${res.status})`);
+  const results = await Promise.allSettled(
+    LEGAL_RSS_FEEDS.map(async (feed) => {
+      const url = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(feed)}`;
+      const res = await fetch(url);
+      if (!res.ok) return [];
+      const data: Rss2JsonResponse = await res.json();
+      if (data.status !== "ok" || !data.items?.length) return [];
+      return data.items;
+    })
+  );
+
+  for (const result of results) {
+    if (result.status === "fulfilled") {
+      allItems.push(...result.value);
+    }
   }
 
-  const data: Rss2JsonResponse = await res.json();
-  if (data.status !== "ok" || !data.items?.length) {
+  if (allItems.length === 0) {
     throw new Error("No stories found. Try again in a moment.");
   }
 
-  const cards: Card[] = [];
-
-  for (const item of data.items) {
+  // Filter out duplicates against existing board cards
+  const fresh = allItems.filter((item) => {
     const title = stripHtml(item.title);
-    if (!title || existingTitles.has(title.toLowerCase())) continue;
+    return title && !existingTitles.has(title.toLowerCase());
+  });
 
+  // Score and sort by relevance
+  const scored = fresh
+    .map((item) => ({ item, score: scoreItem(item, keywords) }))
+    .sort((a, b) => b.score - a.score);
+
+  // Take top 3
+  const top = scored.slice(0, 3);
+
+  if (top.length === 0) {
+    throw new Error("No new stories matched your criteria. Try different keywords.");
+  }
+
+  return top.map(({ item }) => {
+    const title = stripHtml(item.title);
     const rawDesc = stripHtml(item.description);
-    const prompt = rawDesc
-      ? `Inspired by: "${truncate(rawDesc, 200)}"\n\nStory angle for law firm content:`
-      : "Story angle for law firm content:";
+    const prompt = buildPrompt(rawDesc, criteria);
 
     let sourceName = "Legal News";
     try {
@@ -67,18 +162,14 @@ export async function fetchStoryIdeas(
       // keep default
     }
 
-    cards.push({
+    return {
       id: `feed-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
       title,
       description: prompt,
-      priority: "medium",
+      priority: "medium" as const,
       sourceUrl: item.link,
       sourceName,
       createdAt: Date.now(),
-    });
-
-    existingTitles.add(title.toLowerCase());
-  }
-
-  return cards;
+    };
+  });
 }

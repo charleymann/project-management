@@ -13,13 +13,15 @@ import {
 import { arrayMove } from "@dnd-kit/sortable";
 import { Board, Card } from "./types";
 import { loadBoard, saveBoard } from "./boardData";
-import { fetchStoryIdeas } from "./storyFetcher";
+import { fetchStoryIdeas, SearchCriteria } from "./storyFetcher";
 import { useAuth } from "./auth";
 import KanbanColumn from "./components/KanbanColumn";
 import KanbanCard from "./components/KanbanCard";
 import CardModal from "./components/CardModal";
 import LoginPage from "./components/LoginPage";
 import HomePage from "./components/HomePage";
+import FetchFormModal, { FetchCriteria } from "./components/FetchFormModal";
+import StorySuggestionsModal from "./components/StorySuggestionsModal";
 
 type Page = "login" | "home" | "board";
 
@@ -55,8 +57,12 @@ function StoryBoard({
   const [activeCard, setActiveCard] = useState<Card | null>(null);
   const [editingCard, setEditingCard] = useState<Card | null>(null);
   const [addingToColumn, setAddingToColumn] = useState<string | null>(null);
+
+  // Fetch flow state
+  const [showFetchForm, setShowFetchForm] = useState(false);
   const [isFetching, setIsFetching] = useState(false);
   const [fetchError, setFetchError] = useState<string | null>(null);
+  const [suggestions, setSuggestions] = useState<Card[] | null>(null);
 
   useEffect(() => {
     saveBoard(board);
@@ -73,19 +79,42 @@ function StoryBoard({
     [board.columns]
   );
 
-  const handleFetchStories = async () => {
+  const handleOpenFetchForm = () => {
+    setFetchError(null);
+    setShowFetchForm(true);
+  };
+
+  const handleFetchSubmit = async (formCriteria: FetchCriteria) => {
     setIsFetching(true);
     setFetchError(null);
     try {
-      const newCards = await fetchStoryIdeas(board.cards);
+      const criteria: SearchCriteria = {
+        topic: formCriteria.topic,
+        practiceArea: formCriteria.practiceArea,
+        notes: formCriteria.notes,
+      };
+      const newCards = await fetchStoryIdeas(board.cards, criteria);
       if (newCards.length === 0) {
-        setFetchError("No new stories found. Try again later.");
+        setFetchError("No new stories found. Try different keywords.");
         return;
       }
+      setShowFetchForm(false);
+      setSuggestions(newCards);
+    } catch (err) {
+      setFetchError(
+        err instanceof Error ? err.message : "Failed to fetch stories."
+      );
+    } finally {
+      setIsFetching(false);
+    }
+  };
+
+  const handleAcceptSuggestions = (selected: Card[]) => {
+    if (selected.length > 0) {
       setBoard((prev) => {
         const newCardsMap: Record<string, Card> = {};
         const newIds: string[] = [];
-        for (const card of newCards) {
+        for (const card of selected) {
           newCardsMap[card.id] = card;
           newIds.push(card.id);
         }
@@ -99,13 +128,8 @@ function StoryBoard({
           ),
         };
       });
-    } catch (err) {
-      setFetchError(
-        err instanceof Error ? err.message : "Failed to fetch stories."
-      );
-    } finally {
-      setIsFetching(false);
     }
+    setSuggestions(null);
   };
 
   const handleDragStart = (event: DragStartEvent) => {
@@ -258,7 +282,7 @@ function StoryBoard({
               onAddCard={() => setAddingToColumn(column.id)}
               onEditCard={setEditingCard}
               onFetchStories={
-                column.id === "story-feed" ? handleFetchStories : undefined
+                column.id === "story-feed" ? handleOpenFetchForm : undefined
               }
               isFetching={column.id === "story-feed" ? isFetching : false}
               fetchError={column.id === "story-feed" ? fetchError : null}
@@ -271,6 +295,22 @@ function StoryBoard({
           ) : null}
         </DragOverlay>
       </DndContext>
+
+      {showFetchForm && (
+        <FetchFormModal
+          onSubmit={handleFetchSubmit}
+          onClose={() => setShowFetchForm(false)}
+          isFetching={isFetching}
+        />
+      )}
+
+      {suggestions && (
+        <StorySuggestionsModal
+          suggestions={suggestions}
+          onConfirm={handleAcceptSuggestions}
+          onClose={() => setSuggestions(null)}
+        />
+      )}
 
       {addingToColumn && (
         <CardModal
