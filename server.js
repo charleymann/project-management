@@ -77,7 +77,7 @@ Respond ONLY with the JSON array, no other text.`;
 });
 
 // SPA fallback — serve index.html for any unmatched route
-app.get("*", (_req, res) => {
+app.get("/{*path}", (_req, res) => {
   res.sendFile(join(__dirname, "dist", "index.html"));
 });
 
